@@ -9,3 +9,5 @@ export default async function HomePage() {
     redirect("/login");
   }
 }
+
+// Halaman utama redirect ke dashboard atau login
