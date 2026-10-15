@@ -1,0 +1,40 @@
+# Fail yang tidak perlu commit ke repositori
+
+# Persekitaran
+.env
+.env.local
+.env.*.local
+
+# Next.js
+.next/
+out/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Prisma
+prisma/migrations/
+
+# Binaan
+dist/
+build/
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Fail muat naik (fail bukti)
+uploads/
+public/uploads/

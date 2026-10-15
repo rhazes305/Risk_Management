@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Pemboleh ubah warna sistem ─────────────────────────────────────────── */
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f7f8fa;
+  --color-border: #e5e7eb;
+  --color-text: #1f2328;
+  --color-muted: #57606a;
+  --color-accent: #3b82d4;
+
+  /* Tahap risiko — teks + latar belakang */
+  --risk-high-bg: #ffebe9;
+  --risk-high-text: #a40000;
+  --risk-high-border: #ff8182;
+
+  --risk-medium-bg: #fff8c5;
+  --risk-medium-text: #7d4e00;
+  --risk-medium-border: #d4a72c;
+
+  --risk-low-bg: #dafbe1;
+  --risk-low-text: #116329;
+  --risk-low-border: #4ac26b;
+}
+
+/* ─── Indikator tahap risiko ─────────────────────────────────────────────── */
+/* Digunakan dengan label teks — warna bukan satu-satunya petunjuk (AT-09)   */
+.risk-high {
+  background-color: var(--risk-high-bg);
+  color: var(--risk-high-text);
+  border: 1px solid var(--risk-high-border);
+}
+
+.risk-medium {
+  background-color: var(--risk-medium-bg);
+  color: var(--risk-medium-text);
+  border: 1px solid var(--risk-medium-border);
+}
+
+.risk-low {
+  background-color: var(--risk-low-bg);
+  color: var(--risk-low-text);
+  border: 1px solid var(--risk-low-border);
+}
+
+/* ─── Status rekod ───────────────────────────────────────────────────────── */
+.status-draf            { @apply bg-gray-100 text-gray-600 border border-gray-300; }
+.status-menunggu        { @apply bg-blue-50 text-blue-700 border border-blue-300; }
+.status-perlu-pembetulan{ @apply bg-yellow-50 text-yellow-800 border border-yellow-400; }
+.status-disahkan        { @apply bg-green-50 text-green-800 border border-green-400; }
+.status-ditutup         { @apply bg-gray-100 text-gray-500 border border-gray-300; }

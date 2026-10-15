@@ -1,0 +1,206 @@
+// Prisma schema — Sistem Pemantauan Pengurusan Risiko v1.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Pengguna & Peranan
+// ─────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  PEGAWAI_RISIKO
+  UNIT_BAHAGIAN
+  PENGURUSAN_PEMANTAU
+}
+
+enum AccountStatus {
+  AKTIF
+  TIDAK_AKTIF
+}
+
+model User {
+  id          String        @id @default(cuid())
+  name        String
+  email       String        @unique
+  password    String        // bcrypt hash
+  role        Role
+  status      AccountStatus @default(AKTIF)
+  units       UserUnit[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  auditLogs   AuditLog[]
+  reviews     RiskReview[]
+}
+
+model Unit {
+  id                  String    @id @default(cuid())
+  code                String    @unique
+  name                String
+  pegawaiTanggungjawab String?
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  users               UserUnit[]
+  risks               Risk[]
+  stakeholders        Stakeholder[]
+}
+
+model UserUnit {
+  userId    String
+  unitId    String
+  user      User   @relation(fields: [userId], references: [id])
+  unit      Unit   @relation(fields: [unitId], references: [id])
+  @@id([userId, unitId])
+}
+
+// ─────────────────────────────────────────────
+// Daftar Risiko
+// ─────────────────────────────────────────────
+
+enum RecordStatus {
+  DRAF
+  MENUNGGU_SEMAKAN
+  PERLU_PEMBETULAN
+  DISAHKAN
+  DITUTUP
+}
+
+model Risk {
+  id                  String        @id @default(cuid())
+  riskCode            String        @unique  // Jana oleh sistem, contoh RISK-2026-001
+  strategiDokumen     String?
+  terasObjektif       String?
+  isuDalaman          String?
+  isuLuaran           String?
+  tajukRisiko         String
+  kesan               String?
+  kawalan             String?
+  unitId              String
+  unit                Unit          @relation(fields: [unitId], references: [id])
+  pegawaiId           String?       // pegawai bertanggungjawab
+  status              RecordStatus  @default(DRAF)
+  closedReason        String?
+  closedAt            DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  assessments         RiskAssessment[]
+  treatments          RiskTreatment[]
+  effectiveness       Effectiveness[]
+  reviews             RiskReview[]
+  auditLogs           AuditLog[]
+}
+
+model RiskAssessment {
+  id            String   @id @default(cuid())
+  riskId        String
+  risk          Risk     @relation(fields: [riskId], references: [id])
+  tahun         Int
+  kemungkinan   Int      // 1–5
+  akibat        Int      // 1–5
+  skor          Int      // dikira: kemungkinan × akibat
+  tahap         String   // dikira dari matriks: Rendah / Sederhana / Tinggi
+  tarikhPenilaian DateTime @default(now())
+  createdAt     DateTime @default(now())
+  @@unique([riskId, tahun])
+}
+
+model RiskTreatment {
+  id              String   @id @default(cuid())
+  riskId          String
+  risk            Risk     @relation(fields: [riskId], references: [id])
+  tindakan        String
+  pemilik         String?
+  tarikhMula      DateTime?
+  tarikhSasaran   DateTime?
+  statusTindakan  String   @default("Belum Mula")
+  bukti           String?  // pautan fail atau keterangan
+  komen           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Effectiveness {
+  id              String   @id @default(cuid())
+  riskId          String
+  risk            Risk     @relation(fields: [riskId], references: [id])
+  tahun           Int
+  nilai           String   // boleh "TB", "50%", "20%" dll
+  bukti           String?
+  tarikhKemaskini DateTime @default(now())
+  pengemaskiniId  String?
+  @@unique([riskId, tahun])
+}
+
+// ─────────────────────────────────────────────
+// Semakan
+// ─────────────────────────────────────────────
+
+model RiskReview {
+  id         String       @id @default(cuid())
+  riskId     String
+  risk       Risk         @relation(fields: [riskId], references: [id])
+  reviewerId String
+  reviewer   User         @relation(fields: [reviewerId], references: [id])
+  action     String       // SAHKAN | PULANGKAN
+  komen      String?
+  createdAt  DateTime     @default(now())
+}
+
+// ─────────────────────────────────────────────
+// Pihak Berkepentingan
+// ─────────────────────────────────────────────
+
+model Stakeholder {
+  id                  String    @id @default(cuid())
+  unitId              String
+  unit                Unit      @relation(fields: [unitId], references: [id])
+  pihakBerkepentingan String
+  keperluanJangkaan   String?
+  isu                 String?
+  peluangKawalan      String?
+  statusRisiko        String?   // null = "Belum diisi"
+  tahun               Int
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  monitoring          StakeholderMonitoring[]
+}
+
+model StakeholderMonitoring {
+  id              String      @id @default(cuid())
+  stakeholderId   String
+  stakeholder     Stakeholder @relation(fields: [stakeholderId], references: [id])
+  tahun           Int
+  tempoh          String      // April | Ogos | Disember
+  statusKemaskini String?     // null = "Belum diisi"
+  tarikh          DateTime?
+  pengemaskiniId  String?
+  bukti           String?
+  createdAt       DateTime    @default(now())
+  @@unique([stakeholderId, tahun, tempoh])
+}
+
+// ─────────────────────────────────────────────
+// Audit
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String   // CREATE | UPDATE | DELETE | SUBMIT | VERIFY | RETURN | CLOSE
+  entityType String   // Risk | Effectiveness | Stakeholder dll
+  entityId   String?
+  riskId     String?
+  risk       Risk?    @relation(fields: [riskId], references: [id])
+  before     Json?
+  after      Json?
+  komen      String?
+  createdAt  DateTime @default(now())
+}
